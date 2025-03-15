@@ -11,13 +11,12 @@ type GetSingle<T> = T extends (infer U)[] ? U : never;
 type Sorts = GetSingle<Parameters<OnChange>[2]>;
 
 interface CustomTableProps {
-    data: Coin[];
+    coinData: Coin[];
     customColumns: string[];
     actionColumnsArr: actionColumn[];
 }
 
-const CustomTable: React.FC<CustomTableProps> = ({ data, customColumns, actionColumnsArr }) => {
-    console.log(data);
+const CustomTable: React.FC<CustomTableProps> = ({ coinData, customColumns, actionColumnsArr }) => {
     const [filteredInfo, setFilteredInfo] = useState<Filters>({});
     const [sortedInfo, setSortedInfo] = useState<Sorts>({});
 
@@ -65,13 +64,13 @@ const CustomTable: React.FC<CustomTableProps> = ({ data, customColumns, actionCo
 
     // Generate columns dynamically
     const generateActionColumns = (data: actionColumn[]): TableColumnsType<Coin> => {
-        if (!data.length) return [];
+        if (!coinData.length) return [];
 
         return data.map((column) => ({
             title: column.title,
             dataIndex: column.key,
             key: column.key,
-            fixed: "right",
+            // fixed: "right",
             onCell: (record) => ({
                 onClick: () => alert(`Show more info for ${record.name}`),
             }),
@@ -83,14 +82,14 @@ const CustomTable: React.FC<CustomTableProps> = ({ data, customColumns, actionCo
     const [actionColumns, setActionColumns] = useState<TableColumnsType<Coin>>([]);
 
     useEffect(() => {
-        setColumns(generateColumns(data));
+        setColumns(generateColumns(coinData));
         setActionColumns(generateActionColumns(actionColumnsArr));
-    }, [data, sortedInfo]);
+    }, [coinData, sortedInfo]);
 
     return (
         <Table<Coin>
             columns={[columns, actionColumns].flat()}
-            dataSource={data}
+            dataSource={coinData}
             onChange={handleChange}
             pagination={{
                 defaultPageSize: 40,

@@ -1,27 +1,16 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { AudioOutlined } from "@ant-design/icons";
-import { Input } from "antd";
-import type { GetProps } from "antd";
+import React, { useEffect, useCallback } from "react";
 import axios from "axios";
 import { Coin } from "@/types/coinGeckoApiTypes";
 import CustomTable from "@/components/table";
+import SearchComponent from "@/components/search-component";
+import debounce from "lodash.debounce";
+import CsvToJson from "@/components/csv-to-json";
+import PortfolioCard from "@/components/portfolio-card";
 
-type SearchProps = GetProps<typeof Input.Search>;
+const backupData: Coin[] = [];
 
-const { Search } = Input;
-
-const suffix = (
-    <AudioOutlined
-        style={{
-            fontSize: 16,
-            color: "#1677ff",
-        }}
-    />
-);
-
-const onSearch: SearchProps["onSearch"] = (value, _e, info) => console.log(info?.source, value);
 export default function Home() {
     const [topCrypto, setTopCrypto] = React.useState<Coin[]>([]);
 
@@ -47,12 +36,12 @@ export default function Home() {
                     current_price: coin.current_price,
                     total_volume: coin.total_volume,
                     price_change_percentage_24h: coin.price_change_percentage_24h,
-
                     max_supply: coin.max_supply,
                     symbol: coin.symbol,
                 }));
 
                 setTopCrypto(formattedCoins);
+                backupData.push(...formattedCoins);
             } catch (error) {
                 console.error("Error fetching data: ", error);
             }
@@ -61,22 +50,40 @@ export default function Home() {
         fetchDataByMarketCap();
     }, []);
 
-    console.log(topCrypto);
+    const handleSearch = useCallback(
+        debounce((e: React.ChangeEvent<HTMLInputElement>, data: Coin[]) => {
+            if (e.target.value === "") {
+                setTopCrypto(backupData);
+                return;
+            }
+            setTopCrypto(data);
+        }, 300),
+        []
+    );
 
     return (
         <div className="h-[100vh] flex items-center justify-center mx-auto w-4/5">
             <div className="flex flex-col w-full mx-auto items-center h-[100vh] gap-5">
                 <div className="flex justify-end flex-col items-center w-full h-1/2">
-                    <Search placeholder="input search text" allowClear onSearch={onSearch} style={{ width: "100%" }} />
+                    <div className="w-full grid grid-cols-3 gap-4">
+                        <PortfolioCard />
+                        <PortfolioCard />
+                        <PortfolioCard />
+                    </div>
+
+                    <SearchComponent onChange={handleSearch} data={topCrypto} />
                 </div>
+
                 <div className="h-[2px] flex flex-col gap-4">
                     <CustomTable
-                        data={topCrypto}
+                        coinData={topCrypto}
                         customColumns={["image", "name", "ath", "ath_date", "market_cap", "current_price"]}
                         actionColumnsArr={[{ key: "show-more-info", title: "Action" }]}
                     />
                 </div>
             </div>
+
+            <CsvToJson />
         </div>
     );
 }
