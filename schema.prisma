@@ -1,0 +1,98 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  //   url = "jdbc:postgresql://localhost:5431/portfolio_tracker" // uses connection pooling
+  url      = "postgresql://postgres:postgres@localhost:5431/portfolio_tracker"
+}
+
+model Exchange {
+  id                 String              @id @default(cuid())
+  name               String
+  createdAt          DateTime            @default(now()) @map(name: "created_at")
+  updatedAt          DateTime            @updatedAt @map(name: "updated_at")
+  cryptoTransactions CryptoTransaction[] // One-to-many relationship
+
+  @@map(name: "exchanges")
+}
+
+model Coin {
+  id      Int    @id @default(autoincrement())
+  name    String
+  symbol  String
+  logoImg String
+
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @updatedAt @map(name: "updated_at")
+
+  cryptoTransactions CryptoTransaction[] // One-to-many relationship
+
+  @@map(name: "coins")
+}
+
+model FiatCurrency {
+  id      Int     @id @default(autoincrement())
+  name    String
+  symbol  String
+  logoImg String?
+
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @updatedAt @map(name: "updated_at")
+
+  cryptoTransactions CryptoTransaction[] // One-to-many relationship
+
+  @@map(name: "fiat_currencies")
+}
+
+model TransactionStatus {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @updatedAt @map(name: "updated_at")
+
+  cryptoTransactions CryptoTransaction[] // One-to-many relationship
+
+  @@map(name: "transaction_statuses")
+}
+
+model CryptoTransaction {
+  id         String   @id @default(cuid())
+  exchange   Exchange @relation(fields: [exchangeId], references: [id])
+  exchangeId String
+
+  coin   Coin @relation(fields: [coinId], references: [id])
+  coinId Int
+
+  quantity            Float
+  price               Float
+  transactionStatus   TransactionStatus @relation(fields: [transactionStatusId], references: [id])
+  transactionStatusId Int
+
+  fiatCurrency   FiatCurrency @relation(fields: [fiatCurrencyId], references: [id]) // czk, usd, eur
+  fiatCurrencyId Int
+
+  date DateTime
+
+  user   User? @relation(fields: [userId], references: [id])
+  userId Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map(name: "crypto_transactions")
+}
+
+model User {
+  id                 Int                 @id @default(autoincrement())
+  name               String
+  email              String              @unique
+  createdAt          DateTime            @default(now()) @map(name: "created_at")
+  updatedAt          DateTime            @updatedAt @map(name: "updated_at")
+  cryptoTransactions CryptoTransaction[] // One-to-many relationship
+
+  @@map(name: "users")
+}
