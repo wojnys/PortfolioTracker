@@ -1,10 +1,12 @@
 "use client";
 import React from "react";
 import { useForm } from "@tanstack/react-form";
-import { Input, Select } from "antd";
-import { UserOutlined } from "@ant-design/icons";
 import { Exchange } from "@prisma/client";
-import { set } from "lodash";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import CustomSelect from "./select";
+import CsvToJson from "../csv-to-json";
+import axios from "axios";
 
 interface CryptoCsvTransactionFormProps {
     exchanges: Exchange[];
@@ -25,17 +27,58 @@ const CryptoCsvTransactionForm: React.FC<CryptoCsvTransactionFormProps> = ({ exc
             amount: 0,
             price: 0,
             exchange: { value: exchanges[0].id, label: exchanges[0].name },
+            parsedJsonData: [] as any[],
         },
-        onSubmit: ({ value }) => {
+        onSubmit: async ({ value }) => {
             console.log("Submitted values:");
             console.log(value);
             console.log(JSON.stringify(value, null, 2));
+
+            // create call
+            const formData = new FormData();
+            formData.append("amount", value.amount.toString());
+            formData.append("price", value.price.toString());
+            formData.append("exchange", JSON.stringify(value.exchange.value));
+
+            if (value.parsedJsonData.length > 0) {
+                // const blob = new Blob([JSON.stringify(value.parsedJsonData)], { type: "application/json" });
+                value.parsedJsonData.forEach((data) => {
+                    console.log(data);
+                });
+                // formData.append("file", blob);
+            }
+
+            console.log(formData.get("amount"));
+
+            try {
+                const response = await axios.post("/api/transaction", {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    },
+                    data: {
+                        userId: 1,
+                        amount: value.amount,
+                        price: value.price,
+                        exchangeId: value.exchange.value,
+                        parsedJsonData: value.parsedJsonData,
+                    },
+                });
+                const data = response.data;
+
+                console.log(data);
+            } catch (error) {
+                console.error("Error submitting form:", error);
+            }
         },
     });
 
+    const handleParsedData = (data: any[]) => {
+        form.setFieldValue("parsedJsonData", data);
+    };
+
     return (
         <form
-            className="w-3/4 mx-auto"
+            className="w-3/4 mx-auto p-4"
             onSubmit={(e) => {
                 e.preventDefault();
                 form.handleSubmit();
@@ -55,7 +98,6 @@ const CryptoCsvTransactionForm: React.FC<CryptoCsvTransactionFormProps> = ({ exc
                         <Input
                             type="number"
                             placeholder="Coin amount ..."
-                            prefix={<UserOutlined />}
                             name={field.name}
                             value={field.state.value}
                             onChange={(e) => field.handleChange(Number(e.target.value))}
@@ -78,7 +120,6 @@ const CryptoCsvTransactionForm: React.FC<CryptoCsvTransactionFormProps> = ({ exc
                         <Input
                             type="number"
                             placeholder="Coin price ..."
-                            prefix={<UserOutlined />}
                             name={field.name}
                             value={field.state.value}
                             onChange={(e) => field.handleChange(Number(e.target.value))}
@@ -88,13 +129,10 @@ const CryptoCsvTransactionForm: React.FC<CryptoCsvTransactionFormProps> = ({ exc
                 )}
             />
 
-            <form.Field
-                name="exchange"
-                children={(field) => (
-                    <Select defaultValue={exchangesValue[0]} value={field.state.value} onChange={field.handleChange} options={exchangesValue} />
-                )}
-            />
-            <button onClick={form.handleSubmit}>Submit</button>
+            <form.Field name="exchange" children={(field) => <CustomSelect options={exchangesValue} label="Exchange" />} />
+
+            <form.Field name="parsedJsonData" children={(field) => <CsvToJson parsedJsonData={handleParsedData} />} />
+            <Button onClick={form.handleSubmit}>Submit</Button>
         </form>
     );
 };

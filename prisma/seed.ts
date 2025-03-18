@@ -28,6 +28,7 @@ async function main() {
             { name: "Litecoin", symbol: "LTC", logoImg: faker.image.url() },
             { name: "Chainlink", symbol: "LINK", logoImg: faker.image.url() },
             { name: "Avalanche", symbol: "AVAX", logoImg: faker.image.url() },
+            { name: "Shiba inu", symbol: "SHIB", logoImg: faker.image.url() },
         ],
     });
 

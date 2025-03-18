@@ -5,7 +5,7 @@ const { Meta } = Card;
 
 const PortfolioCard = () => {
     return (
-        <Card hoverable cover={<img alt="example" className="w-[200px]" src="https://os.alipayobjects.com/rmsportal/QBnOOoLaAfKPirc.png" />}>
+        <Card hoverable>
             <Meta title="Europe Street beat" description="www.instagram.com" />
         </Card>
     );

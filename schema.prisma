@@ -60,9 +60,10 @@ model TransactionStatus {
 }
 
 model CryptoTransaction {
-  id         String   @id @default(cuid())
-  exchange   Exchange @relation(fields: [exchangeId], references: [id])
-  exchangeId String
+  id                     String   @id @default(cuid())
+  exchangeTransactionUid String   @unique
+  exchange               Exchange @relation(fields: [exchangeId], references: [id])
+  exchangeId             String
 
   coin   Coin @relation(fields: [coinId], references: [id])
   coinId Int
@@ -77,8 +78,8 @@ model CryptoTransaction {
 
   date DateTime
 
-  user   User? @relation(fields: [userId], references: [id])
-  userId Int?
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

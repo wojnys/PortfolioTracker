@@ -4,7 +4,7 @@ import { Exchange } from "@prisma/client";
 
 const Page = async () => {
     const exhanges: Exchange[] = await prisma.exchange.findMany();
-    console.log(exhanges);
+
     return (
         <div>
             <CryptoCsvTransactionForm exchanges={exhanges} />

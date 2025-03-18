@@ -1,89 +1,63 @@
-"use client";
+import MainPage from "@/components/pages/main-page";
+import prisma from "@/lib/prisma";
+import { CryptoTransactionWithRelationsType } from "@/types/prismaTypes";
 
-import React, { useEffect, useCallback } from "react";
-import axios from "axios";
-import { Coin } from "@/types/coinGeckoApiTypes";
-import CustomTable from "@/components/table";
-import SearchComponent from "@/components/search-component";
-import debounce from "lodash.debounce";
-import CsvToJson from "@/components/csv-to-json";
-import PortfolioCard from "@/components/portfolio-card";
+export interface GroupedTransactionsType {
+    coinName: string;
+    coinSymbol: string;
+    coinImage: string;
+    exchangeName: string;
+    transactionDate: Date;
+    fiatCurrencySymbol: string;
+    price: number;
+    quantity: number;
+    transactionStatus: string;
+}
 
-const backupData: Coin[] = [];
+const Page = async () => {
+    const myCryptoPortfolio = await prisma.cryptoTransaction.findMany({
+        include: {
+            coin: true,
+            exchange: true,
+            user: true,
+            transactionStatus: true,
+            fiatCurrency: true,
+        },
+    });
 
-export default function Home() {
-    const [topCrypto, setTopCrypto] = React.useState<Coin[]>([]);
+    const groupByCoinId = (transactions: CryptoTransactionWithRelationsType[]) => {
+        return transactions.reduce((acc, transaction) => {
+            const { coinId } = transaction;
 
-    useEffect(() => {
-        const fetchDataByMarketCap = async () => {
-            try {
-                const response = await axios.get("https://api.coingecko.com/api/v3/coins/markets", {
-                    params: {
-                        vs_currency: "usd",
-                        order: "market_cap_desc",
-                        per_page: 100, // Number of coins per request
-                        page: 1,
-                        sparkline: false,
-                    },
-                });
-                const formattedCoins: Coin[] = response.data.map((coin: Coin, index: number) => ({
-                    image: coin.image,
-                    key: index + 1,
-                    name: coin.name,
-                    ath: coin.ath,
-                    ath_date: coin.ath_date,
-                    market_cap: coin.market_cap,
-                    current_price: coin.current_price,
-                    total_volume: coin.total_volume,
-                    price_change_percentage_24h: coin.price_change_percentage_24h,
-                    max_supply: coin.max_supply,
-                    symbol: coin.symbol,
-                }));
-
-                setTopCrypto(formattedCoins);
-                backupData.push(...formattedCoins);
-            } catch (error) {
-                console.error("Error fetching data: ", error);
+            if (!acc[coinId]) {
+                acc[coinId] = [];
             }
-        };
 
-        fetchDataByMarketCap();
-    }, []);
+            acc[coinId].push({
+                coinName: transaction.coin.name,
+                coinSymbol: transaction.coin.symbol,
+                coinImage: transaction.coin.logoImg,
+                exchangeName: transaction.exchange.name,
+                transactionDate: transaction.date,
+                fiatCurrencySymbol: transaction.fiatCurrency.symbol,
+                price: transaction.price,
+                quantity: transaction.quantity,
+                transactionStatus: transaction.transactionStatus.name,
+            });
 
-    const handleSearch = useCallback(
-        debounce((e: React.ChangeEvent<HTMLInputElement>, data: Coin[]) => {
-            if (e.target.value === "") {
-                setTopCrypto(backupData);
-                return;
-            }
-            setTopCrypto(data);
-        }, 300),
-        []
-    );
+            return acc;
+        }, {} as Record<number, GroupedTransactionsType[]>);
+    };
+
+    const groupedTransactions = groupByCoinId(myCryptoPortfolio);
+
+    console.log("page.tsx");
+    console.log(groupedTransactions);
 
     return (
-        <div className="h-[100vh] flex items-center justify-center mx-auto w-4/5">
-            <div className="flex flex-col w-full mx-auto items-center h-[100vh] gap-5">
-                <div className="flex justify-end flex-col items-center w-full h-1/2">
-                    <div className="w-full grid grid-cols-3 gap-4">
-                        <PortfolioCard />
-                        <PortfolioCard />
-                        <PortfolioCard />
-                    </div>
-
-                    <SearchComponent onChange={handleSearch} data={topCrypto} />
-                </div>
-
-                <div className="h-[2px] flex flex-col gap-4">
-                    <CustomTable
-                        coinData={topCrypto}
-                        customColumns={["image", "name", "ath", "ath_date", "market_cap", "current_price"]}
-                        actionColumnsArr={[{ key: "show-more-info", title: "Action" }]}
-                    />
-                </div>
-            </div>
-
-            <CsvToJson />
+        <div>
+            <MainPage myCryptoPortfolio={groupedTransactions} />
         </div>
     );
-}
+};
+export default Page;

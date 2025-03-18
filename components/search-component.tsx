@@ -10,8 +10,6 @@ interface SearchComponentProps {
     data: Coin[];
 }
 
-type SearchProps = GetProps<typeof Input.Search>;
-
 const { Search } = Input;
 
 const suffix = (
