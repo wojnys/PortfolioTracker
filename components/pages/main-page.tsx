@@ -7,7 +7,6 @@ import CustomTable from "@/components/table";
 import SearchComponent from "@/components/search-component";
 import debounce from "lodash.debounce";
 import PortfolioCard from "@/components/portfolio-card";
-import { CryptoTransactionWithRelationsType } from "@/types/prismaTypes";
 import { GroupedTransactionsType } from "@/app/page";
 
 const backupData: Coin[] = [];
@@ -26,7 +25,7 @@ const MainPage: React.FC<MainPageProps> = ({ myCryptoPortfolio }) => {
             try {
                 const response = await axios.get("https://api.coingecko.com/api/v3/coins/markets", {
                     params: {
-                        vs_currency: "usd",
+                        vs_currency: "czk",
                         order: "market_cap_desc",
                         per_page: 100, // Number of coins per request
                         page: 1,
@@ -68,14 +67,26 @@ const MainPage: React.FC<MainPageProps> = ({ myCryptoPortfolio }) => {
         []
     );
 
+    console.log(topCrypto);
+
+    const curreCoinPrice = (coinSymbol: string): number => {
+        const coin = topCrypto.find((coin) => coin.symbol.toLowerCase() === coinSymbol.toLowerCase());
+        if (coin) return coin.current_price;
+        return 0;
+    };
+
     return (
         <div className="h-[100vh] flex items-center justify-center mx-auto w-4/5">
             <div className="flex flex-col w-full mx-auto items-center h-[100vh] gap-5">
                 <div className="flex justify-end flex-col items-center w-full h-1/2">
                     <div className="w-full grid grid-cols-3 gap-4">
-                        <PortfolioCard />
-                        <PortfolioCard />
-                        <PortfolioCard />
+                        {Object.keys(myCryptoPortfolio).map((key, index) => (
+                            <PortfolioCard
+                                key={key}
+                                allCoinTransactions={myCryptoPortfolio[Number(key)]}
+                                currentCoinPrice={curreCoinPrice(myCryptoPortfolio[Number(key)][0].coinSymbol)}
+                            />
+                        ))}
                     </div>
 
                     <SearchComponent onChange={handleSearch} data={topCrypto} />
